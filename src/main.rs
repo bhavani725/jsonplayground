@@ -129,7 +129,7 @@ async fn serve_index() -> Result<HttpResponse> {
         }
         
         .container {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
             background: rgba(255, 255, 255, 0.95);
             border-radius: 20px;
@@ -161,12 +161,12 @@ async fn serve_index() -> Result<HttpResponse> {
         
         .editor-section {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 30px;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 20px;
             margin-bottom: 30px;
         }
         
-        .input-section, .output-section {
+        .input-section, .output-section, .tree-section {
             background: #f8f9fa;
             border-radius: 15px;
             padding: 25px;
@@ -174,7 +174,7 @@ async fn serve_index() -> Result<HttpResponse> {
             transition: all 0.3s ease;
         }
         
-        .input-section:hover, .output-section:hover {
+        .input-section:hover, .output-section:hover, .tree-section:hover {
             border-color: #667eea;
             box-shadow: 0 5px 15px rgba(102, 126, 234, 0.1);
         }
@@ -184,6 +184,30 @@ async fn serve_index() -> Result<HttpResponse> {
             font-weight: 600;
             margin-bottom: 15px;
             color: #2c3e50;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .view-toggle {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .toggle-btn {
+            padding: 4px 8px;
+            border: 1px solid #ccc;
+            background: white;
+            border-radius: 4px;
+            font-size: 0.8em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .toggle-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
         }
         
         textarea {
@@ -204,6 +228,106 @@ async fn serve_index() -> Result<HttpResponse> {
             outline: none;
             border-color: #667eea;
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .tree-view {
+            height: 350px;
+            border: 2px solid #dee2e6;
+            border-radius: 10px;
+            background: white;
+            overflow: auto;
+            padding: 15px;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.4;
+        }
+        
+        .tree-node {
+            margin: 2px 0;
+            position: relative;
+        }
+        
+        .tree-key {
+            color: #0451a5;
+            font-weight: 600;
+        }
+        
+        .tree-string {
+            color: #0a4a72;
+        }
+        
+        .tree-number {
+            color: #d73a49;
+            font-weight: 500;
+        }
+        
+        .tree-boolean {
+            color: #005cc5;
+            font-weight: 600;
+        }
+        
+        .tree-null {
+            color: #6f42c1;
+            font-weight: 600;
+        }
+        
+        .tree-bracket {
+            color: #24292e;
+            font-weight: bold;
+        }
+        
+        .tree-toggle {
+            cursor: pointer;
+            user-select: none;
+            display: inline-block;
+            width: 16px;
+            text-align: center;
+            margin-right: 4px;
+            font-weight: bold;
+            color: #586069;
+        }
+        
+        .tree-toggle:hover {
+            background: #e1e4e8;
+            border-radius: 3px;
+        }
+        
+        .tree-toggle.expanded::before {
+            content: '▼';
+        }
+        
+        .tree-toggle.collapsed::before {
+            content: '▶';
+        }
+        
+        .tree-toggle.leaf::before {
+            content: '•';
+            color: #d1d5da;
+        }
+        
+        .tree-children {
+            margin-left: 20px;
+            border-left: 1px solid #e1e4e8;
+            padding-left: 10px;
+        }
+        
+        .tree-children.collapsed {
+            display: none;
+        }
+        
+        .tree-path {
+            font-size: 0.8em;
+            color: #586069;
+            background: #f6f8fa;
+            padding: 2px 6px;
+            border-radius: 3px;
+            margin-left: 8px;
+        }
+        
+        .tree-count {
+            font-size: 0.8em;
+            color: #586069;
+            font-style: italic;
         }
         
         .controls {
@@ -311,6 +435,25 @@ async fn serve_index() -> Result<HttpResponse> {
             .btn {
                 width: 200px;
             }
+            
+            .view-toggle {
+                margin-top: 10px;
+            }
+            
+            .tree-section {
+                display: none !important;
+            }
+        }
+        
+        @media (max-width: 1200px) and (min-width: 769px) {
+            .editor-section {
+                grid-template-columns: 1fr 1fr;
+            }
+            
+            .tree-section {
+                grid-column: span 2;
+                display: block !important;
+            }
         }
     </style>
 </head>
@@ -329,8 +472,20 @@ async fn serve_index() -> Result<HttpResponse> {
                 </div>
                 
                 <div class="output-section">
-                    <h3 class="section-title">✨ Formatted Output</h3>
+                    <h3 class="section-title">
+                        ✨ Formatted Output
+                        <div class="view-toggle">
+                            <button class="toggle-btn active" onclick="switchView('text')">Text</button>
+                            <button class="toggle-btn" onclick="switchView('tree')">Tree</button>
+                        </div>
+                    </h3>
                     <textarea id="outputJson" placeholder="Formatted JSON will appear here..." readonly></textarea>
+                    <div id="treeView" class="tree-view" style="display: none;"></div>
+                </div>
+                
+                <div class="tree-section" id="treeSection" style="display: none;">
+                    <h3 class="section-title">🌳 Interactive Tree View</h3>
+                    <div id="interactiveTree" class="tree-view"></div>
                 </div>
             </div>
             
@@ -355,6 +510,8 @@ async fn serve_index() -> Result<HttpResponse> {
     </div>
 
     <script>
+        let currentJsonData = null;
+        
         function showStatus(message, isError = false) {
             const status = document.getElementById('status');
             status.textContent = message;
@@ -363,6 +520,172 @@ async fn serve_index() -> Result<HttpResponse> {
             setTimeout(() => {
                 status.classList.remove('show');
             }, 4000);
+        }
+        
+        function switchView(viewType) {
+            const textView = document.getElementById('outputJson');
+            const treeView = document.getElementById('treeView');
+            const buttons = document.querySelectorAll('.toggle-btn');
+            
+            buttons.forEach(btn => btn.classList.remove('active'));
+            
+            if (viewType === 'text') {
+                textView.style.display = 'block';
+                treeView.style.display = 'none';
+                buttons[0].classList.add('active');
+            } else {
+                textView.style.display = 'none';
+                treeView.style.display = 'block';
+                buttons[1].classList.add('active');
+                if (currentJsonData) {
+                    renderTreeView(currentJsonData, treeView);
+                }
+            }
+        }
+        
+        function createTreeNode(key, value, path = '', isLast = false, isRoot = false) {
+            const nodeDiv = document.createElement('div');
+            nodeDiv.className = 'tree-node';
+            
+            if (value === null) {
+                nodeDiv.innerHTML = `
+                    <span class="tree-toggle leaf"></span>
+                    ${key ? `<span class="tree-key">"${key}"</span>: ` : ''}
+                    <span class="tree-null">null</span>
+                `;
+            } else if (typeof value === 'string') {
+                nodeDiv.innerHTML = `
+                    <span class="tree-toggle leaf"></span>
+                    ${key ? `<span class="tree-key">"${key}"</span>: ` : ''}
+                    <span class="tree-string">"${escapeHtml(value)}"</span>
+                `;
+            } else if (typeof value === 'number') {
+                nodeDiv.innerHTML = `
+                    <span class="tree-toggle leaf"></span>
+                    ${key ? `<span class="tree-key">"${key}"</span>: ` : ''}
+                    <span class="tree-number">${value}</span>
+                `;
+            } else if (typeof value === 'boolean') {
+                nodeDiv.innerHTML = `
+                    <span class="tree-toggle leaf"></span>
+                    ${key ? `<span class="tree-key">"${key}"</span>: ` : ''}
+                    <span class="tree-boolean">${value}</span>
+                `;
+            } else if (Array.isArray(value)) {
+                const toggle = document.createElement('span');
+                toggle.className = 'tree-toggle expanded';
+                toggle.onclick = () => toggleNode(toggle);
+                
+                const content = document.createElement('span');
+                content.innerHTML = `
+                    ${key ? `<span class="tree-key">"${key}"</span>: ` : ''}
+                    <span class="tree-bracket">[</span>
+                    <span class="tree-count">${value.length} items</span>
+                `;
+                
+                nodeDiv.appendChild(toggle);
+                nodeDiv.appendChild(content);
+                
+                if (value.length > 0) {
+                    const childrenDiv = document.createElement('div');
+                    childrenDiv.className = 'tree-children';
+                    
+                    value.forEach((item, index) => {
+                        const isLastItem = index === value.length - 1;
+                        const childPath = path ? `${path}[${index}]` : `[${index}]`;
+                        const childNode = createTreeNode(`${index}`, item, childPath, isLastItem);
+                        childrenDiv.appendChild(childNode);
+                    });
+                    
+                    nodeDiv.appendChild(childrenDiv);
+                }
+                
+                const closingBracket = document.createElement('div');
+                closingBracket.className = 'tree-node';
+                closingBracket.innerHTML = '<span class="tree-toggle leaf"></span><span class="tree-bracket">]</span>';
+                nodeDiv.appendChild(closingBracket);
+                
+            } else if (typeof value === 'object') {
+                const keys = Object.keys(value);
+                const toggle = document.createElement('span');
+                toggle.className = 'tree-toggle expanded';
+                toggle.onclick = () => toggleNode(toggle);
+                
+                const content = document.createElement('span');
+                content.innerHTML = `
+                    ${key ? `<span class="tree-key">"${key}"</span>: ` : ''}
+                    <span class="tree-bracket">{</span>
+                    <span class="tree-count">${keys.length} properties</span>
+                `;
+                
+                nodeDiv.appendChild(toggle);
+                nodeDiv.appendChild(content);
+                
+                if (keys.length > 0) {
+                    const childrenDiv = document.createElement('div');
+                    childrenDiv.className = 'tree-children';
+                    
+                    keys.forEach((objKey, index) => {
+                        const isLastItem = index === keys.length - 1;
+                        const childPath = path ? `${path}.${objKey}` : objKey;
+                        const childNode = createTreeNode(objKey, value[objKey], childPath, isLastItem);
+                        childrenDiv.appendChild(childNode);
+                    });
+                    
+                    nodeDiv.appendChild(childrenDiv);
+                }
+                
+                const closingBrace = document.createElement('div');
+                closingBrace.className = 'tree-node';
+                closingBrace.innerHTML = '<span class="tree-toggle leaf"></span><span class="tree-bracket">}</span>';
+                nodeDiv.appendChild(closingBrace);
+            }
+            
+            return nodeDiv;
+        }
+        
+        function toggleNode(toggleElement) {
+            const isExpanded = toggleElement.classList.contains('expanded');
+            const node = toggleElement.parentElement;
+            const children = node.querySelector('.tree-children');
+            
+            if (children) {
+                if (isExpanded) {
+                    toggleElement.classList.remove('expanded');
+                    toggleElement.classList.add('collapsed');
+                    children.classList.add('collapsed');
+                } else {
+                    toggleElement.classList.remove('collapsed');
+                    toggleElement.classList.add('expanded');
+                    children.classList.remove('collapsed');
+                }
+            }
+        }
+        
+        function renderTreeView(jsonData, container) {
+            container.innerHTML = '';
+            const treeNode = createTreeNode(null, jsonData, '', false, true);
+            container.appendChild(treeNode);
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        function updateTreeSection() {
+            const treeSection = document.getElementById('treeSection');
+            const interactiveTree = document.getElementById('interactiveTree');
+            
+            if (currentJsonData) {
+                if (window.innerWidth > 768) {
+                    treeSection.style.display = 'block';
+                    renderTreeView(currentJsonData, interactiveTree);
+                } else {
+                    treeSection.style.display = 'none';
+                }
+            }
         }
         
         async function formatJson() {
@@ -389,9 +712,14 @@ async fn serve_index() -> Result<HttpResponse> {
                 
                 if (result.success) {
                     outputJson.value = result.formatted_json;
+                    currentJsonData = JSON.parse(inputJson);
+                    updateTreeSection();
                     showStatus('✅ JSON is valid and has been formatted successfully!');
                 } else {
                     outputJson.value = '';
+                    currentJsonData = null;
+                    document.getElementById('treeView').innerHTML = '';
+                    document.getElementById('interactiveTree').innerHTML = '';
                     showStatus(`❌ ${result.error_message}`, true);
                 }
             } catch (error) {
@@ -423,9 +751,14 @@ async fn serve_index() -> Result<HttpResponse> {
                 
                 if (result.success) {
                     outputJson.value = result.formatted_json;
+                    currentJsonData = JSON.parse(inputJson);
+                    updateTreeSection();
                     showStatus('📦 JSON has been minified successfully!');
                 } else {
                     outputJson.value = '';
+                    currentJsonData = null;
+                    document.getElementById('treeView').innerHTML = '';
+                    document.getElementById('interactiveTree').innerHTML = '';
                     showStatus(`❌ ${result.error_message}`, true);
                 }
             } catch (error) {
@@ -436,23 +769,20 @@ async fn serve_index() -> Result<HttpResponse> {
         function clearAll() {
             document.getElementById('inputJson').value = '';
             document.getElementById('outputJson').value = '';
+            document.getElementById('treeView').innerHTML = '';
+            document.getElementById('interactiveTree').innerHTML = '';
+            document.getElementById('treeSection').style.display = 'none';
+            currentJsonData = null;
             showStatus('🗑️ Cleared all content!');
         }
         
         // Add some sample JSON for demo
         document.addEventListener('DOMContentLoaded', function() {
-            const sampleJson = `{
-"name": "John Doe",
-"age": 30,
-"city": "New York",
-"hobbies": ["reading", "swimming", "coding"],
-"address": {
-"street": "123 Main St",
-"zipCode": "10001"
-},
-"isActive": true
-}`;
+            const sampleJson = ``;
             document.getElementById('inputJson').value = sampleJson;
+            
+            // Handle window resize
+            window.addEventListener('resize', updateTreeSection);
         });
     </script>
 </body>
@@ -466,7 +796,7 @@ async fn serve_index() -> Result<HttpResponse> {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-   //    env_logger::init();
+    env_logger::init();
     
     println!("🚀 Starting JSON Validator & Formatter Server...");
     println!("📍 Server will be available at: http://localhost:8080");
