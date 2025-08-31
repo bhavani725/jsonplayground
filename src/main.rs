@@ -778,8 +778,43 @@ async fn serve_index() -> Result<HttpResponse> {
         
         // Add some sample JSON for demo
         document.addEventListener('DOMContentLoaded', function() {
-            const sampleJson = ``;
-            document.getElementById('inputJson').value = sampleJson;
+            const sampleJson = `{
+"name": "John Doe",
+"age": 30,
+"city": "New York",
+"hobbies": ["reading", "swimming", "coding"],
+"address": {
+"street": "123 Main St",
+"zipCode": "10001",
+"coordinates": {
+"lat": 40.7128,
+"lng": -74.0060
+}
+},
+"isActive": true,
+"profile": {
+"bio": "Software developer with 10 years of experience",
+"skills": ["JavaScript", "Python", "Rust", "Go"],
+"education": {
+"degree": "Computer Science",
+"university": "MIT",
+"year": 2010
+},
+"projects": [
+{
+"name": "JSON Validator",
+"language": "Rust",
+"status": "completed"
+},
+{
+"name": "Web Scraper",
+"language": "Python",
+"status": "in-progress"
+}
+]
+}
+}`;
+           // document.getElementById('inputJson').value = sampleJson;
             
             // Handle window resize
             window.addEventListener('resize', updateTreeSection);
